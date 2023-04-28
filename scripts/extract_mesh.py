@@ -12,10 +12,19 @@ import torch
 import tyro
 from rich.console import Console
 
+from nerfstudio.model_components.ray_samplers import save_points
 from nerfstudio.utils.eval_utils import eval_setup
-from nerfstudio.utils.marching_cubes import get_surface_occupancy, get_surface_sliding
+from nerfstudio.utils.marching_cubes import (
+    get_surface_occupancy,
+    get_surface_sliding,
+    get_surface_sliding_with_contraction,
+)
 
 CONSOLE = Console(width=120)
+
+# speedup for when input size to model doesn't change (much)
+torch.backends.cudnn.benchmark = True  # type: ignore
+torch.set_float32_matmul_precision("high")
 
 
 @dataclass
@@ -36,6 +45,18 @@ class ExtractMesh:
     bounding_box_min: Tuple[float, float, float] = (-1.0, -1.0, -1.0)
     """Maximum of the bounding box."""
     bounding_box_max: Tuple[float, float, float] = (1.0, 1.0, 1.0)
+    """marching cube threshold"""
+    marching_cube_threshold: float = 0.0
+    """create visibility mask"""
+    create_visibility_mask: bool = False
+    """save visibility grid"""
+    save_visibility_grid: bool = False
+    """visibility grid resolution"""
+    visibility_grid_resolution: int = 512
+    """threshold for considering a points is valid when splat to visibility grid"""
+    valid_points_thres: float = 0.005
+    """sub samples factor of images when creating visibility grid"""
+    sub_sample_factor: int = 8
 
     def main(self) -> None:
         """Main function."""
@@ -45,6 +66,43 @@ class ExtractMesh:
         _, pipeline, _ = eval_setup(self.load_config)
 
         CONSOLE.print("Extract mesh with marching cubes and may take a while")
+
+        if self.create_visibility_mask:
+            assert self.resolution % 512 == 0
+
+            coarse_mask = pipeline.get_visibility_mask(
+                self.visibility_grid_resolution, self.valid_points_thres, self.sub_sample_factor
+            )
+
+            def inv_contract(x):
+                mag = torch.linalg.norm(x, ord=pipeline.model.scene_contraction.order, dim=-1)
+                mask = mag >= 1
+                x_new = x.clone()
+                x_new[mask] = (1 / (2 - mag[mask][..., None])) * (x[mask] / mag[mask][..., None])
+                return x_new
+
+            if self.save_visibility_grid:
+                offset = torch.linspace(-2.0, 2.0, 512)
+                x, y, z = torch.meshgrid(offset, offset, offset, indexing="ij")
+                offset_cube = torch.stack([x, y, z], dim=-1).reshape(-1, 3).to(coarse_mask.device)
+                points = offset_cube[coarse_mask.reshape(-1) > 0]
+                points = inv_contract(points)
+                save_points("mask.ply", points.cpu().numpy())
+                torch.save(coarse_mask, "coarse_mask.pt")
+
+            get_surface_sliding_with_contraction(
+                sdf=lambda x: (
+                    pipeline.model.field.forward_geonetwork(x)[:, 0] - self.marching_cube_threshold
+                ).contiguous(),
+                resolution=self.resolution,
+                bounding_box_min=self.bounding_box_min,
+                bounding_box_max=self.bounding_box_max,
+                coarse_mask=coarse_mask,
+                output_path=self.output_path,
+                simplify_mesh=self.simplify_mesh,
+                inv_contraction=inv_contract,
+            )
+            return
 
         if self.is_occupancy:
             # for unisurf
