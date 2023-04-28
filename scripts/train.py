@@ -31,6 +31,8 @@ subcommand:
 
 from __future__ import annotations
 
+import datetime
+
 import random
 import socket
 import traceback
@@ -254,4 +256,9 @@ def entrypoint():
 
 
 if __name__ == "__main__":
+    # start_time = datetime.datetime.now()
+    # print("start time is: ", start_time)
     entrypoint()
+    # end_time = datetime.datetime.now()
+    # print("end time is: ", end_time)
+    # print("duration time is: ", end_time-start_time)

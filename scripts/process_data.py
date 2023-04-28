@@ -100,36 +100,36 @@ class ProcessImages:
 
         # Run COLMAP
         colmap_dir = self.output_dir / "colmap"
-        if not self.skip_colmap:
-            colmap_dir.mkdir(parents=True, exist_ok=True)
-
-            (sfm_tool, feature_type, matcher_type) = process_data_utils.find_tool_feature_matcher_combination(
-                self.sfm_tool, self.feature_type, self.matcher_type
-            )
-
-            if sfm_tool == "colmap":
-                colmap_utils.run_colmap(
-                    image_dir=image_dir,
-                    colmap_dir=colmap_dir,
-                    camera_model=CAMERA_MODELS[self.camera_type],
-                    gpu=self.gpu,
-                    verbose=self.verbose,
-                    matching_method=self.matching_method,
-                    colmap_cmd=self.colmap_cmd,
-                )
-            elif sfm_tool == "hloc":
-                hloc_utils.run_hloc(
-                    image_dir=image_dir,
-                    colmap_dir=colmap_dir,
-                    camera_model=CAMERA_MODELS[self.camera_type],
-                    verbose=self.verbose,
-                    matching_method=self.matching_method,
-                    feature_type=feature_type,
-                    matcher_type=matcher_type,
-                )
-            else:
-                CONSOLE.log("[bold red]Invalid combination of sfm_tool, feature_type, and matcher_type, exiting")
-                sys.exit(1)
+        # if not self.skip_colmap:
+        #     colmap_dir.mkdir(parents=True, exist_ok=True)
+        #
+        #     (sfm_tool, feature_type, matcher_type) = process_data_utils.find_tool_feature_matcher_combination(
+        #         self.sfm_tool, self.feature_type, self.matcher_type
+        #     )
+        #
+        #     if sfm_tool == "colmap":
+        #         colmap_utils.run_colmap(
+        #             image_dir=image_dir,
+        #             colmap_dir=colmap_dir,
+        #             camera_model=CAMERA_MODELS[self.camera_type],
+        #             gpu=self.gpu,
+        #             verbose=self.verbose,
+        #             matching_method=self.matching_method,
+        #             colmap_cmd=self.colmap_cmd,
+        #         )
+        #     elif sfm_tool == "hloc":
+        #         hloc_utils.run_hloc(
+        #             image_dir=image_dir,
+        #             colmap_dir=colmap_dir,
+        #             camera_model=CAMERA_MODELS[self.camera_type],
+        #             verbose=self.verbose,
+        #             matching_method=self.matching_method,
+        #             feature_type=feature_type,
+        #             matcher_type=matcher_type,
+        #         )
+        #     else:
+        #         CONSOLE.log("[bold red]Invalid combination of sfm_tool, feature_type, and matcher_type, exiting")
+        #         sys.exit(1)
 
         # Save transforms.json
         if (colmap_dir / "sparse" / "0" / "cameras.bin").exists():

@@ -87,6 +87,7 @@ def collate_image_dataset_batch_list(batch: Dict, num_rays_per_batch: int, keep_
         keep_full_image: whether or not to include a reference to the full image in returned batch
     """
 
+    # device = batch["image"][0].device
     device = batch["image"][0].device
     num_images = len(batch["image"])
 

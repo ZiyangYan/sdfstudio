@@ -202,6 +202,7 @@ class SDFField(Field):
                     "n_levels": num_levels,
                     "n_features_per_level": features_per_level,
                     "log2_hashmap_size": log2_hashmap_size,
+
                     "base_resolution": base_res,
                     "per_level_scale": growth_factor,
                     "interpolation": "Smoothstep" if smoothstep else "Linear",

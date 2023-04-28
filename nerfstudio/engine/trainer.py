@@ -17,6 +17,9 @@ Code to train model.
 """
 from __future__ import annotations
 
+import datetime
+import sys
+
 import dataclasses
 import functools
 import os
@@ -129,6 +132,17 @@ class Trainer:
         )
 
     def train(self) -> None:
+
+        """Create txt file to save time"""
+        output_dir = str(self.base_dir) + '/' + "time_record"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        f = open(output_dir + "/" + "time.txt", "w+")
+
+        """Output start time"""
+        start_time = datetime.datetime.now()
+        CONSOLE.print("[bold green]:tada: :tada: :tada: start-time is: {} :tada: :tada: :tada:".format(start_time))
+        print(" start-time is: {} ".format(start_time), file = f)
         """Train the model."""
         assert self.pipeline.datamanager.train_dataset is not None, "Missing DatsetInputs"
 
@@ -182,9 +196,16 @@ class Trainer:
 
             CONSOLE.rule()
             CONSOLE.print("[bold green]:tada: :tada: :tada: Training Finished :tada: :tada: :tada:", justify="center")
-            if not self.config.viewer.quit_on_train_completion:
-                CONSOLE.print("Use ctrl+c to quit", justify="center")
-                self._always_render(step)
+
+            """Output end time"""
+            end_time = datetime.datetime.now()
+            CONSOLE.print("[bold green]:tada: :tada: :tada: end-time is: {} :tada: :tada: :tada:".format(end_time))
+            CONSOLE.print("[bold green]:tada: :tada: :tada: duration-time is: {} :tada: :tada: :tada:".format(end_time - start_time))
+            print(" time is: {} ".format(end_time), file=f)
+            print(" duration-time is: {} ".format(end_time - start_time), file=f)
+            # if not self.config.viewer.quit_on_train_completion:
+            #     CONSOLE.print("Use ctrl+c to quit", justify="center")
+            #     self._always_render(step)
 
     @check_main_thread
     def _always_render(self, step):

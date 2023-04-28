@@ -148,7 +148,8 @@ class TensorDataclass:
 
     def __getitem__(self: TensorDataclassT, indices) -> TensorDataclassT:
         if isinstance(indices, (torch.Tensor)):
-            return self._apply_fn_to_fields(lambda x: x[indices])
+            # return self._apply_fn_to_fields(lambda x: x[indices])
+            return self._apply_fn_to_fields(lambda x: x[indices.long()])
         if isinstance(indices, (int, slice, type(Ellipsis))):
             indices = (indices,)
         assert isinstance(indices, tuple)
